@@ -39,6 +39,7 @@ export default function WritingTools() {
       });
 
       const data = await response.json();
+      console.log('API response:', data); // Debug log
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate email');
       }
@@ -49,6 +50,37 @@ export default function WritingTools() {
       console.error('API error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendViaEmail = () => {
+    if (!generatedEmail) {
+      console.log('No generated email available'); // Debug log
+      return;
+    }
+
+    try {
+      console.log('Preparing mailto link'); // Debug log
+      // Combine greeting, body, and closing for email body
+      const emailBody = `${generatedEmail.greeting}\n\n${generatedEmail.body}\n\n${generatedEmail.closing}`;
+      // Encode subject and body for mailto URL
+      const encodedSubject = encodeURIComponent(generatedEmail.subject);
+      const encodedBody = encodeURIComponent(emailBody);
+      // Create mailto link with placeholder recipient
+      const mailtoLink = `mailto:?subject=${encodedSubject}&body=${encodedBody}`;
+      console.log('Mailto link:', mailtoLink); // Debug log
+
+      // Create a temporary <a> element to trigger mailto
+      const link = document.createElement('a');
+      link.href = mailtoLink;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      console.log('Mailto link triggered'); // Debug log
+    } catch (err) {
+      setError('Failed to open mail app. Please ensure a mail app (e.g., Apple Mail, Outlook) is installed and set as default in macOS System Settings > Desktop & Dock > Default Mail App.');
+      console.error('Mailto error:', err);
     }
   };
 
@@ -69,6 +101,12 @@ export default function WritingTools() {
                 <span key={i}>{line}<br /></span>
               ))}</p>
             </div>
+            <button
+              onClick={handleSendViaEmail}
+              className="mt-4 w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Send via Email
+            </button>
           </div>
         )}
         {error && (
@@ -85,11 +123,11 @@ export default function WritingTools() {
                 textarea.style.height = 'auto';
                 textarea.style.height = `${textarea.scrollHeight}px`;
               }}
-              placeholder="e.g., Write a professional email to my boss requesting a meeting"
+              placeholder="e.g., Write a professional email to my manager requesting leave"
               className="w-full p-4 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-base leading-relaxed scrollbar-hidden"
               disabled={loading}
               rows="1"
-              style={{ minHeight: '40px', boxSizing: 'border-box' }}
+              style={{ minHeight: '40px', maxHeight: '12rem', boxSizing: 'border-box' }}
             />
             <div className="flex items-center space-x-2">
               <label htmlFor="tone" className="text-sm font-medium text-black">
@@ -113,7 +151,7 @@ export default function WritingTools() {
               disabled={loading}
               className={`w-full py-2 px-4 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {loading ? 'Generating...' : 'Send'}
+              {loading ? 'Generating...' : 'Generate'}
             </button>
           </div>
         </form>
