@@ -7,8 +7,8 @@ export async function POST(request) {
     console.log('Received POST request to /api/tools/emailWriting');
 
     // Get request body
-    const { context, tone } = await request.json();
-    console.log('Request body:', { context, tone });
+    const { context, tone, length } = await request.json();
+    console.log('Request body:', { context, tone, length });
 
     // Validate inputs
     if (!context || typeof context !== 'string') {
@@ -36,7 +36,7 @@ export async function POST(request) {
     );
 
     // Construct prompt
-    const prompt = getEmailPrompt(context, tone);
+    const prompt = getEmailPrompt(context, tone, length);
     console.log('Sending prompt to LLaMA 4 model:', prompt);
 
     // Call LLaMA 4 model
@@ -72,6 +72,10 @@ export async function POST(request) {
       console.log('Extracted JSON:', emailText);
     }
 
+    // Sanitize JSON: Escape unescaped newlines within string values
+    emailText = emailText.replace(/(?<=: *"(?:[^"\\]|\\.)*)\n(?=(?:[^"\\]|\\.)*")/g, '\\n');
+    console.log('Sanitized JSON:', emailText);
+
     let parsedEmail;
     try {
       parsedEmail = JSON.parse(emailText);
@@ -101,8 +105,8 @@ export async function POST(request) {
   } catch (err) {
     console.error('Server error:', err.message, err.stack);
     return new Response(JSON.stringify({ error: `Server error: ${err.message}` }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
     });
   }
 }

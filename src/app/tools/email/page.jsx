@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 export default function WritingTools() {
   const [context, setContext] = useState('');
   const [tone, setTone] = useState('professional');
+  const [length, setLength] = useState(''); // New state for body length
   const [generatedEmail, setGeneratedEmail] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -14,8 +15,8 @@ export default function WritingTools() {
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = 'auto'; // Reset height
-      textarea.style.height = `${textarea.scrollHeight}px`; // Set to content height
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
     }
   }, [context]);
 
@@ -25,17 +26,18 @@ export default function WritingTools() {
     setLoading(true);
 
     // Validate input
-    if (!context.trim()) {
+    if (context.trim().length === 0) {
       setError('Please enter the email context');
       setLoading(false);
       return;
     }
 
     try {
+      console.log('Sending API request to /api/tools/emailWriting', { context, tone, length }); // Debug log
       const response = await fetch('/api/tools/emailWriting', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ context, tone }),
+        body: JSON.stringify({ context, tone, length: length ? Number(length) : undefined }), // Send length as number or undefined
       });
 
       const data = await response.json();
@@ -54,33 +56,57 @@ export default function WritingTools() {
   };
 
   const handleSendViaEmail = () => {
+    console.log('Send via Email button clicked'); // Debug log
     if (!generatedEmail) {
       console.log('No generated email available'); // Debug log
+      setError('No email generated');
       return;
     }
 
     try {
       console.log('Preparing mailto link'); // Debug log
-      // Combine greeting, body, and closing for email body
       const emailBody = `${generatedEmail.greeting}\n\n${generatedEmail.body}\n\n${generatedEmail.closing}`;
-      // Encode subject and body for mailto URL
       const encodedSubject = encodeURIComponent(generatedEmail.subject);
       const encodedBody = encodeURIComponent(emailBody);
-      // Create mailto link with placeholder recipient
       const mailtoLink = `mailto:?subject=${encodedSubject}&body=${encodedBody}`;
       console.log('Mailto link:', mailtoLink); // Debug log
 
-      // Create a temporary <a> element to trigger mailto
       const link = document.createElement('a');
       link.href = mailtoLink;
       link.style.display = 'none';
       document.body.appendChild(link);
+      console.log('Triggering mailto link'); // Debug log
       link.click();
       document.body.removeChild(link);
       console.log('Mailto link triggered'); // Debug log
     } catch (err) {
-      setError('Failed to open mail app. Please ensure a mail app (e.g., Apple Mail, Outlook) is installed and set as default in macOS System Settings > Desktop & Dock > Default Mail App.');
+      setError('Failed to open mail app. On macOS, go to System Settings > Desktop & Dock > Default Mail App and select Apple Mail or Outlook. Configure an email account. Alternatively, use Copy to Clipboard.');
       console.error('Mailto error:', err);
+    }
+  };
+
+  const handleCopyToClipboard = () => {
+    console.log('Copy to Clipboard button clicked'); // Debug log
+    if (!generatedEmail) {
+      console.log('No generated email available'); // Debug log
+      setError('No email generated');
+      return;
+    }
+
+    try {
+      const emailText = `Subject: ${generatedEmail.subject}\n\n${generatedEmail.greeting}\n\n${generatedEmail.body}\n\n${generatedEmail.closing}`;
+      navigator.clipboard.writeText(emailText)
+        .then(() => {
+          setError('Email copied to clipboard! Paste it into your mail app.');
+          console.log('Email copied to clipboard'); // Debug log
+        })
+        .catch((err) => {
+          setError('Failed to copy email. Please select and copy the text manually.');
+          console.error('Clipboard error:', err);
+        });
+    } catch (err) {
+      setError('Failed to copy email. Please select and copy the text manually.');
+      console.error('Clipboard error:', err);
     }
   };
 
@@ -107,6 +133,12 @@ export default function WritingTools() {
             >
               Send via Email
             </button>
+            <button
+              onClick={handleCopyToClipboard}
+              className="mt-2 w-full py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Copy to Clipboard
+            </button>
           </div>
         )}
         {error && (
@@ -129,22 +161,39 @@ export default function WritingTools() {
               rows="1"
               style={{ minHeight: '40px', maxHeight: '12rem', boxSizing: 'border-box' }}
             />
-            <div className="flex items-center space-x-2">
-              <label htmlFor="tone" className="text-sm font-medium text-black">
-                Tone:
-              </label>
-              <select
-                id="tone"
-                value={tone}
-                onChange={(e) => setTone(e.target.value)}
-                className="p-2 text-black border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              >
-                <option value="professional">Professional</option>
-                <option value="friendly">Friendly</option>
-                <option value="business">Business</option>
-                <option value="others">Others</option>
-              </select>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <label htmlFor="tone" className="text-sm font-medium text-black">
+                  Tone:
+                </label>
+                <select
+                  id="tone"
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value)}
+                  className="p-2 text-black border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading}
+                >
+                  <option value="professional">Professional</option>
+                  <option value="friendly">Friendly</option>
+                  <option value="business">Business</option>
+                  <option value="others">Others</option>
+                </select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <label htmlFor="length" className="text-sm font-medium text-black">
+                  Body Length (chars):
+                </label>
+                <input
+                  id="length"
+                  type="number"
+                  min="1"
+                  value={length}
+                  onChange={(e) => setLength(e.target.value)}
+                  placeholder="Optional"
+                  className="p-2 w-24 text-black border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading}
+                />
+              </div>
             </div>
             <button
               type="submit"
