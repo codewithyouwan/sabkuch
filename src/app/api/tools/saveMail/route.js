@@ -1,7 +1,15 @@
-import { createClient } from '@supabase/supabase-js';
-
+import { createClient } from "@supabase/supabase-js";
 export async function POST(request) {
   try {
+    // Initialize Supabase client
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+          console.log('Configuration error: Supabase credentials not configured');
+          alert("Supabase credentials are not configured. Please check your environment variables.");
+    }
+    const supa = createClient(supabaseUrl, supabaseKey);
+    console.log('Initialized Supabase client');
     console.log('Received POST request to /api/tools/saveMail');
 
     // Get request body
@@ -16,23 +24,8 @@ export async function POST(request) {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-
-    // Initialize Supabase client
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseKey) {
-      console.log('Configuration error: Supabase credentials not configured');
-      return new Response(JSON.stringify({ error: 'Supabase credentials not configured' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('Initialized Supabase client');
-
     // Verify user exists
-    const { data: user, error: userError } = await supabase
+    const { data: user, error: userError } = await supa
       .from('users')
       .select('user_id')
       .eq('user_id', user_id)
@@ -47,7 +40,7 @@ export async function POST(request) {
     }
 
     // Save email
-    const { data, error } = await supabase
+    const { data, error } = await supa
       .from('emails')
       .insert([
         {
