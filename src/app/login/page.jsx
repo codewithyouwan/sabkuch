@@ -12,15 +12,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Load email from localStorage on mount
-  // useEffect(() => {
-  //   // const savedEmail = localStorage.getItem('loginEmail');
-  //   if (savedEmail) {
-  //     setEmail(savedEmail);
-  //   }
-  // }, []);
-
-  // Validate form inputs
   const validateForm = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -34,7 +25,7 @@ export default function LoginPage() {
     return true;
   };
 
-  const handleLogin = (e) => {
+const handleLogin = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -45,16 +36,34 @@ export default function LoginPage() {
       return;
     }
 
-    // Save email to localStorage
-    // localStorage.setItem('loginEmail', email);
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    // Simulate login (no backend)
-    setTimeout(() => {
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Something went wrong');
+        setLoading(false);
+        return;
+      }
+
+      // Save email and token to localStorage
+      // localStorage.setItem('loginEmail', email);
+      localStorage.setItem('authToken', data.token);
+      console.log(localStorage.getItem('authToken'));
+      // Redirect to homepage after successful login
+      setTimeout(() => {
+        setLoading(false);
+        router.push('/home');
+      }, 1000); // Simulate network delay
+    } catch (error) {
+      setError('Network error, please try again');
       setLoading(false);
-      // For demo, redirect to homepage
-      alert('Login successful!'); // Replace with actual login logic
-      router.push('/');
-    }, 1000); // Simulate network delay
+    }
   };
 
   const togglePasswordVisibility = () => {
