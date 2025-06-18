@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function WritingTools() {
   const [context, setContext] = useState('');
@@ -9,9 +10,11 @@ export default function WritingTools() {
   const [generatedEmail, setGeneratedEmail] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const textareaRef = useRef(null);
+  const router = useRouter();
 
-  // Auto-resize textarea
+  // Auto-resize context textarea
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -20,10 +23,50 @@ export default function WritingTools() {
     }
   }, [context]);
 
+  // Auto-resize email textareas when editing
+  useEffect(() => {
+    if (isEditing) {
+      const textareas = document.querySelectorAll('.email-textarea');
+      textareas.forEach((ta) => {
+        ta.style.height = 'auto';
+        ta.style.height = `${ta.scrollHeight}px`;
+      });
+    }
+  }, [isEditing, generatedEmail]);
+
+  // Verify JWT token
+  useEffect(() => {
+    const verifyToken = async () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        if (!response.ok) {
+          localStorage.removeItem('authToken');
+          router.push('/login');
+        }
+      } catch (err) {
+        console.error('Verification error:', err);
+        localStorage.removeItem('authToken');
+        router.push('/login');
+      }
+    };
+    verifyToken();
+  }, [router]);
+
   const handleGenerateEmail = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    setIsEditing(false); // Reset to static view
 
     if (context.trim().length === 0) {
       setError('Please enter the email context');
@@ -54,6 +97,13 @@ export default function WritingTools() {
     }
   };
 
+  const handleEmailChange = (field, value) => {
+    setGeneratedEmail((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
   const handleSendViaEmail = () => {
     console.log('Send via Email button clicked');
     if (!generatedEmail) {
@@ -79,7 +129,7 @@ export default function WritingTools() {
       document.body.removeChild(link);
       console.log('Mailto link triggered');
     } catch (err) {
-      setError('Failed to open mail app. Your browser opened instead, indicating no default mail app is set. On macOS, go to System Settings > Desktop & Dock > Default Mail App and select Apple Mail or Outlook. Configure an email account. Use Copy to Clipboard as a fallback.');
+      setError('Failed to open mail app. Use Copy to Clipboard as a fallback.');
       console.error('Mailto error:', err);
     }
   };
@@ -109,7 +159,7 @@ export default function WritingTools() {
     }
   };
 
-  const handleSaveEmail = async () => {
+  const handleSaveEmail = async (retries = 3) => {
     console.log('Save Email button clicked');
     if (!generatedEmail) {
       console.log('No generated email available');
@@ -118,8 +168,7 @@ export default function WritingTools() {
     }
 
     try {
-      // Placeholder user_id; replace with actual user_id from auth
-      const user_id = '00000000-0000-0000-0000-000000000001'; // TODO: Get from Supabase auth or JWT
+      const user_id = '00000000-0000-0000-0000-000000000001'; // TODO: Get from JWT
       console.log('Saving email with:', { ...generatedEmail, user_id });
       const response = await fetch('/api/tools/saveMail', {
         method: 'POST',
@@ -128,7 +177,7 @@ export default function WritingTools() {
           user_id,
           subject: generatedEmail.subject,
           body: generatedEmail.body,
-          recipient_email:null, // Optional; can add input field later
+          recipient_email: null,
           closing: generatedEmail.closing,
           prompt: generatedEmail.prompt,
         }),
@@ -142,53 +191,125 @@ export default function WritingTools() {
 
       setError('Email saved successfully!');
     } catch (err) {
+      if (retries > 1 && err.message.includes('fetch failed')) {
+        console.log('Retrying save email, retries left:', retries - 1);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        return handleSaveEmail(retries - 1);
+      }
       setError(err.message);
       console.error('Save email error:', err);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col p-4 bg-gray-100">
+    <div className="min-h-screen flex flex-col p-4 bg-gray-100 pb-48"> {/* Added pb-48 to avoid form overlap */}
       <h1 className="text-2xl font-bold mb-6 text-center text-black">Email Writing Tool</h1>
       <div className="flex-grow flex flex-col w-full max-w-3xl mx-auto">
         {generatedEmail && (
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h2 className="text-xl font-bold text-black mb-2">Generated Email</h2>
-            <div className="space-y-2 text-black">
-              <p><strong>Subject:</strong> {generatedEmail.subject}</p>
-              <p><strong>Greeting:</strong> {generatedEmail.greeting}</p>
-              <p><strong>Body:</strong><br />{generatedEmail.body.split('\n').map((line, i) => (
-                <span key={i}>{line}<br /></span>
-              ))}</p>
-              <p><strong>Closing:</strong><br />{generatedEmail.closing.split('\n').map((line, i) => (
-                <span key={i}>{line}<br /></span>
-              ))}</p>
+          <div className="bg-white p-6 rounded-lg shadow-md mb-6 relative">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-black">Generated Email</h2>
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="py-1 px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Edit
+                </button>
+              )}
             </div>
-            <button
-              onClick={handleSendViaEmail}
-              className="mt-4 w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Send via Email
-            </button>
-            <button
-              onClick={handleCopyToClipboard}
-              className="mt-2 w-full py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Copy to Clipboard
-            </button>
-            <button
-              onClick={handleSaveEmail}
-              className="mt-2 w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Save Email
-            </button>
+            {isEditing ? (
+              <div className="space-y-4 text-black">
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">Subject:</label>
+                  <input
+                    type="text"
+                    value={generatedEmail.subject}
+                    onChange={(e) => handleEmailChange('subject', e.target.value)}
+                    className="w-full p-2 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">Greeting:</label>
+                  <textarea
+                    value={generatedEmail.greeting}
+                    onChange={(e) => handleEmailChange('greeting', e.target.value)}
+                    className="w-full p-2 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none email-textarea"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">Body:</label>
+                  <textarea
+                    value={generatedEmail.body}
+                    onChange={(e) => handleEmailChange('body', e.target.value)}
+                    className="w-full p-2 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none email-textarea"
+                    rows={6}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">Closing:</label>
+                  <textarea
+                    value={generatedEmail.closing}
+                    onChange={(e) => handleEmailChange('closing', e.target.value)}
+                    className="w-full p-2 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none email-textarea"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2 text-black">
+                <p><strong>Subject:</strong> {generatedEmail.subject}</p>
+                <p><strong>Greeting:</strong> {generatedEmail.greeting}</p>
+                <p>
+                  <strong>Body:</strong>
+                  <br />
+                  {generatedEmail.body.split('\n').map((line, i) => (
+                    <span key={i}>
+                      {line}
+                      <br />
+                    </span>
+                  ))}
+                </p>
+                <p>
+                  <strong>Closing:</strong>
+                  <br />
+                  {generatedEmail.closing.split('\n').map((line, i) => (
+                    <span key={i}>
+                      {line}
+                      <br />
+                    </span>
+                  ))}
+                </p>
+              </div>
+            )}
+            <div className="flex flex-col space-y-2 mt-6">
+              <button
+                onClick={handleSendViaEmail}
+                className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Send via Email
+              </button>
+              <button
+                onClick={handleCopyToClipboard}
+                className="w-full py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Copy to Clipboard
+              </button>
+              <button
+                onClick={handleSaveEmail}
+                className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Save Email
+              </button>
+            </div>
           </div>
         )}
         {error && (
           <p className="text-red-500 text-sm text-center mb-4">{error}</p>
         )}
         <form onSubmit={handleGenerateEmail} className="fixed bottom-4 left-0 right-0 flex justify-center">
-          <div className="w-full max-w-3xl bg-white p-4 rounded-lg shadow-lg flex flex-col space-y-4">
+          <div className="w-full max-w-3xl bg-white/20 backdrop-blur-sm p-4 rounded-lg shadow-lg flex flex-col space-y-4">
             <textarea
               ref={textareaRef}
               value={context}
@@ -199,9 +320,9 @@ export default function WritingTools() {
                 textarea.style.height = `${textarea.scrollHeight}px`;
               }}
               placeholder="e.g., Write a professional email to my manager requesting leave"
-              className="w-full p-4 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-base leading-relaxed scrollbar-hidden"
+              className="w-full p-4 text-black bg-blue-50/70 border border-gray-200/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-base leading-relaxed scrollbar-hidden"
               disabled={loading}
-              rows="1"
+              rows={1}
               style={{ minHeight: '40px', maxHeight: '12rem', boxSizing: 'border-box' }}
             />
             <div className="flex items-center space-x-2">
@@ -212,7 +333,7 @@ export default function WritingTools() {
                 id="tone"
                 value={tone}
                 onChange={(e) => setTone(e.target.value)}
-                className="p-2 text-black border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="p-2 text-black border border-gray-200/60 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/70"
                 disabled={loading}
               >
                 <option value="professional">Professional</option>
@@ -229,7 +350,7 @@ export default function WritingTools() {
                 value={length}
                 onChange={(e) => setLength(e.target.value)}
                 placeholder="e.g., 200"
-                className="p-2 text-black border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-24"
+                className="p-2 text-black border border-gray-200/60 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-24 bg-blue/70"
                 disabled={loading}
               />
             </div>
@@ -250,6 +371,10 @@ export default function WritingTools() {
         }
         .scrollbar-hidden::-webkit-scrollbar {
           display: none; /* Chrome, Safari, Edge */
+        }
+        .email-textarea {
+          min-height: 40px;
+          box-sizing: border-box;
         }
       `}</style>
     </div>
