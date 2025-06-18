@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export default function WritingTools() {
   const [context, setContext] = useState('');
+  const [user, setUser] = useState(null);
   const [tone, setTone] = useState('professional');
   const [length, setLength] = useState('');
   const [generatedEmail, setGeneratedEmail] = useState(null);
@@ -13,6 +14,44 @@ export default function WritingTools() {
   const [isEditing, setIsEditing] = useState(false);
   const textareaRef = useRef(null);
   const router = useRouter();
+  useEffect(() => {
+    const verifyToken = async () => {
+      const token = localStorage.getItem('authToken');
+
+      if (!token) {
+        setLoading(false);
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          localStorage.removeItem('authToken');
+          setLoading(false);
+          router.push('/login');
+          return;
+        }
+
+        setUser({ userId: data.userId, email: data.email, name: data.name });
+        setLoading(false);
+      } catch (error) {
+        console.error('Verification error:', error);
+        localStorage.removeItem('authToken');
+        setLoading(false);
+        router.push('/login');
+      }
+    };
+
+    verifyToken();
+  }, [router]);
 
   // Auto-resize context textarea
   useEffect(() => {
