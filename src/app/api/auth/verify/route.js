@@ -14,7 +14,7 @@ export async function POST(request) {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-    return new Response(JSON.stringify({ message: 'Token is valid', userId: decoded.userId, email: decoded.email }), {
+    return new Response(JSON.stringify({ message: 'Token is valid', userId: decoded.userId, email: decoded.email, name: decoded.name }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
