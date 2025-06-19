@@ -220,6 +220,16 @@ export default function WritingTools() {
 
   return (
     <div className="min-h-screen flex flex-col p-4 bg-gray-100 pb-48"> {/* Added pb-48 to avoid form overlap */}
+      {/* Back Button. */}
+        <button
+        onClick={() => router.push('/home')}
+        className="absolute top-4 left-4 text-gray-600 hover:text-gray-800 transition-colors focus:outline-none"
+        aria-label="Go back to homepage"
+      >
+        <span className="text-2xl">←</span>
+        Home
+      </button>
+      {/* Main Content */}
       <h1 className="text-2xl font-bold mb-6 text-center text-black">Email Writing Tool</h1>
       <div className="flex-grow flex flex-col w-full max-w-3xl mx-auto">
         {generatedEmail && (
