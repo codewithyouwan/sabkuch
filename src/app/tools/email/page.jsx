@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
+import Loader from '../../components/loader';
+import CustomToaster from '../../components/toast';
 
 export default function WritingTools() {
   const [context, setContext] = useState('');
@@ -96,13 +98,11 @@ export default function WritingTools() {
       });
 
       const data = await response.json();
-      console.log('API response:', data); //it has the greetings...
+      console.log('API response:', data);
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate email');
       }
-      console.log("PRINTING DATA");
       setGeneratedEmail({ ...data.email, prompt: context });
-      console.log(generatedEmail.greeting);
     } catch (err) {
       toast.error(err.message);
       console.error('API error:', err);
@@ -182,6 +182,7 @@ export default function WritingTools() {
       return;
     }
 
+    setLoading(true);
     try {
       console.log('Saving email with:', { ...generatedEmail, user_id: user.userId, name: user.name });
       const response = await fetch('/api/tools/saveMail', {
@@ -212,45 +213,17 @@ export default function WritingTools() {
       }
       toast.error(err.message);
       console.error('Save email error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col p-4 bg-gray-100 pb-48">
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: '#333',
-            color: 'white',
-            border: '1px gray solid',
-            borderRadius: '100px',
-            padding: '12px',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          },
-          success: {
-            style: {
-              borderColor: '#10b981',
-            },
-            iconTheme: {
-              primary: '#10b981',
-              secondary: 'white',
-            },
-          },
-          error: {
-            style: {
-              borderColor: '#ef4444',
-              color: '#ef4444',
-            },
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: 'white',
-            },
-          },
-        }}
-      />
+      <CustomToaster />
+      {loading && <Loader />}
       <button
-        onClick={() => router.push('/')}
+        onClick={() => router.push('/home')}
         className="absolute top-4 left-4 text-gray-600 hover:text-gray-800 transition-colors focus:outline-none"
         aria-label="Go back to homepage"
       >
