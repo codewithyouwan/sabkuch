@@ -1,14 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const router = useRouter();
 
+  // Verify token and fetch user data
   useEffect(() => {
     const verifyToken = async () => {
       const token = localStorage.getItem('authToken');
@@ -48,8 +51,21 @@ export default function HomePage() {
     verifyToken();
   }, [router]);
 
+  // Handle clicks outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('authToken');
+    setIsDropdownOpen(false);
     router.push('/login');
   };
 
@@ -58,7 +74,7 @@ export default function HomePage() {
     {
       id: 'email-writer',
       name: 'Email Writer',
-      description: `Generate professional emails with customizable tone and length.Powered by GPT-4.1`,
+      description: `Generate professional emails with customizable tone and length. Powered by GPT-4.1`,
       path: '/tools/email',
       icon: '📧',
     },
@@ -80,12 +96,20 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col bg-gray-100">
       {/* Navigation Bar */}
       <nav className="bg-white shadow-md p-4 flex justify-between items-center">
-        <h1 className="text-white text-2xl font-semibold">SabKuch</h1>
-        <div className="relative group">
-          <button className="text-blue-600 focus:outline-none">
+        <h1 className="text-black text-2xl font-semibold">SabKuch</h1>
+        <div className="relative" ref={dropdownRef}>
+          <button
+            className="text-blue-600 focus:outline-none"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            aria-label="User menu"
+          >
             <span className="text-2xl">👤</span>
           </button>
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg hidden group-hover:block">
+          <div
+            className={`absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10 ${
+              isDropdownOpen ? 'block' : 'hidden'
+            }`}
+          >
             <button
               onClick={handleLogout}
               className="w-full text-left px-4 py-2 text-black hover:bg-gray-100 rounded-lg"
