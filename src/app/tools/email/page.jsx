@@ -32,15 +32,21 @@ export default function WritingTools() {
         });
 
         const data = await response.json();
-
         if (!response.ok) {
           localStorage.removeItem('authToken');
           setLoading(false);
           router.push('/login');
           return;
         }
-
-        setUser({ userId: data.userId, email: data.email, name: data.name });
+        if(data.message!== 'Token is valid'){
+          alert('The token is not verified',data.message);
+          localStorage.removeItem('authToken');
+          setLoading(false);
+          router.push('/login');
+          return;
+        }
+        setUser({userId: data.userId, email: data.email, name: data.name });
+        console.log('User verified:', data);
         setLoading(false);
       } catch (error) {
         console.error('Verification error:', error);
@@ -72,34 +78,6 @@ export default function WritingTools() {
       });
     }
   }, [isEditing, generatedEmail]);
-
-  // Verify JWT token
-  useEffect(() => {
-    const verifyToken = async () => {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/auth/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
-        });
-        if (!response.ok) {
-          localStorage.removeItem('authToken');
-          router.push('/login');
-        }
-      } catch (err) {
-        console.error('Verification error:', err);
-        localStorage.removeItem('authToken');
-        router.push('/login');
-      }
-    };
-    verifyToken();
-  }, [router]);
 
   const handleGenerateEmail = async (e) => {
     e.preventDefault();
@@ -207,13 +185,13 @@ export default function WritingTools() {
     }
 
     try {
-      const user_id = '00000000-0000-0000-0000-000000000001'; // TODO: Get from JWT
-      console.log('Saving email with:', { ...generatedEmail, user_id });
+      // const user_id = '00000000-0000-0000-0000-000000000001'; // TODO: Get from JWT
+      console.log('Saving email with:', { ...generatedEmail, user_id: user.userId, name: user.name });
       const response = await fetch('/api/tools/saveMail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id,
+          user_id: user.userId,
           subject: generatedEmail.subject,
           body: generatedEmail.body,
           recipient_email: null,
