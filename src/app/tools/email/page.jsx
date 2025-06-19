@@ -96,12 +96,13 @@ export default function WritingTools() {
       });
 
       const data = await response.json();
-      console.log('API response:', data);
+      console.log('API response:', data); //it has the greetings...
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate email');
       }
-
+      console.log("PRINTING DATA");
       setGeneratedEmail({ ...data.email, prompt: context });
+      console.log(generatedEmail.greeting);
     } catch (err) {
       toast.error(err.message);
       console.error('API error:', err);
@@ -190,7 +191,7 @@ export default function WritingTools() {
           user_id: user.userId,
           subject: generatedEmail.subject,
           body: generatedEmail.body,
-          recipient_email: null,
+          greetings: generatedEmail.greeting,
           closing: generatedEmail.closing,
           prompt: generatedEmail.prompt,
         }),
