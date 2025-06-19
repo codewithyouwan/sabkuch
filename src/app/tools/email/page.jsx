@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function WritingTools() {
   const [context, setContext] = useState('');
@@ -9,11 +10,12 @@ export default function WritingTools() {
   const [tone, setTone] = useState('professional');
   const [length, setLength] = useState('');
   const [generatedEmail, setGeneratedEmail] = useState(null);
-  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const textareaRef = useRef(null);
   const router = useRouter();
+
+  // Verify token and fetch user data
   useEffect(() => {
     const verifyToken = async () => {
       const token = localStorage.getItem('authToken');
@@ -32,24 +34,19 @@ export default function WritingTools() {
         });
 
         const data = await response.json();
-        if (!response.ok) {
+        if (!response.ok || data.message !== 'Token is valid') {
+          toast.error(data.error || 'Invalid token');
           localStorage.removeItem('authToken');
           setLoading(false);
           router.push('/login');
           return;
         }
-        if(data.message!== 'Token is valid'){
-          alert('The token is not verified',data.message);
-          localStorage.removeItem('authToken');
-          setLoading(false);
-          router.push('/login');
-          return;
-        }
-        setUser({userId: data.userId, email: data.email, name: data.name });
+        setUser({ userId: data.userId, email: data.email, name: data.name });
         console.log('User verified:', data);
         setLoading(false);
       } catch (error) {
         console.error('Verification error:', error);
+        toast.error('Network error during verification');
         localStorage.removeItem('authToken');
         setLoading(false);
         router.push('/login');
@@ -81,12 +78,11 @@ export default function WritingTools() {
 
   const handleGenerateEmail = async (e) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     setIsEditing(false); // Reset to static view
 
     if (context.trim().length === 0) {
-      setError('Please enter the email context');
+      toast.error('Please enter the email context');
       setLoading(false);
       return;
     }
@@ -107,7 +103,7 @@ export default function WritingTools() {
 
       setGeneratedEmail({ ...data.email, prompt: context });
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
       console.error('API error:', err);
     } finally {
       setLoading(false);
@@ -125,7 +121,7 @@ export default function WritingTools() {
     console.log('Send via Email button clicked');
     if (!generatedEmail) {
       console.log('No generated email available');
-      setError('No email generated');
+      toast.error('No email generated');
       return;
     }
 
@@ -145,8 +141,9 @@ export default function WritingTools() {
       link.click();
       document.body.removeChild(link);
       console.log('Mailto link triggered');
+      toast.success('Email opened in your mail app');
     } catch (err) {
-      setError('Failed to open mail app. Use Copy to Clipboard as a fallback.');
+      toast.error('Failed to open mail app. Use Copy to Clipboard as a fallback.');
       console.error('Mailto error:', err);
     }
   };
@@ -155,7 +152,7 @@ export default function WritingTools() {
     console.log('Copy to Clipboard button clicked');
     if (!generatedEmail) {
       console.log('No generated email available');
-      setError('No email generated');
+      toast.error('No email generated');
       return;
     }
 
@@ -163,15 +160,15 @@ export default function WritingTools() {
       const emailText = `Subject: ${generatedEmail.subject}\n\n${generatedEmail.greeting}\n\n${generatedEmail.body}\n\n${generatedEmail.closing}`;
       navigator.clipboard.writeText(emailText)
         .then(() => {
-          setError('Email copied to clipboard! Paste it into your mail app.');
+          toast.success('Email copied to clipboard! Paste it into your mail app.');
           console.log('Email copied to clipboard');
         })
         .catch((err) => {
-          setError('Failed to copy email. Please select and copy the text manually.');
+          toast.error('Failed to copy email. Please select and copy the text manually.');
           console.error('Clipboard error:', err);
         });
     } catch (err) {
-      setError('Failed to copy email. Please select and copy the text manually.');
+      toast.error('Failed to copy email. Please select and copy the text manually.');
       console.error('Clipboard error:', err);
     }
   };
@@ -180,12 +177,11 @@ export default function WritingTools() {
     console.log('Save Email button clicked');
     if (!generatedEmail) {
       console.log('No generated email available');
-      setError('No email generated');
+      toast.error('No email generated');
       return;
     }
 
     try {
-      // const user_id = '00000000-0000-0000-0000-000000000001'; // TODO: Get from JWT
       console.log('Saving email with:', { ...generatedEmail, user_id: user.userId, name: user.name });
       const response = await fetch('/api/tools/saveMail', {
         method: 'POST',
@@ -206,30 +202,59 @@ export default function WritingTools() {
         throw new Error(data.error || 'Failed to save email');
       }
 
-      setError('Email saved successfully!');
+      toast.success('Email saved successfully!');
     } catch (err) {
       if (retries > 1 && err.message.includes('fetch failed')) {
         console.log('Retrying save email, retries left:', retries - 1);
         await new Promise((resolve) => setTimeout(resolve, 2000));
         return handleSaveEmail(retries - 1);
       }
-      setError(err.message);
+      toast.error(err.message);
       console.error('Save email error:', err);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col p-4 bg-gray-100 pb-48"> {/* Added pb-48 to avoid form overlap */}
-      {/* Back Button. */}
-        <button
-        onClick={() => router.push('/home')}
+    <div className="min-h-screen flex flex-col p-4 bg-gray-100 pb-48">
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: '#333',
+            color: 'white',
+            border: '1px gray solid',
+            borderRadius: '100px',
+            padding: '12px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          },
+          success: {
+            style: {
+              borderColor: '#10b981',
+            },
+            iconTheme: {
+              primary: '#10b981',
+              secondary: 'white',
+            },
+          },
+          error: {
+            style: {
+              borderColor: '#ef4444',
+              color: '#ef4444',
+            },
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: 'white',
+            },
+          },
+        }}
+      />
+      <button
+        onClick={() => router.push('/')}
         className="absolute top-4 left-4 text-gray-600 hover:text-gray-800 transition-colors focus:outline-none"
         aria-label="Go back to homepage"
       >
         <span className="text-2xl">←</span>
-        Home
       </button>
-      {/* Main Content */}
       <h1 className="text-2xl font-bold mb-6 text-center text-black">Email Writing Tool</h1>
       <div className="flex-grow flex flex-col w-full max-w-3xl mx-auto">
         {generatedEmail && (
@@ -331,9 +356,6 @@ export default function WritingTools() {
               </button>
             </div>
           </div>
-        )}
-        {error && (
-          <p className="text-red-500 text-sm text-center mb-4">{error}</p>
         )}
         <form onSubmit={handleGenerateEmail} className="fixed bottom-4 left-0 right-0 flex justify-center">
           <div className="w-full max-w-3xl bg-white/20 backdrop-blur-sm p-4 rounded-lg shadow-lg flex flex-col space-y-4">
