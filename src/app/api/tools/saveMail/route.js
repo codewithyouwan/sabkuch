@@ -13,8 +13,8 @@ export async function POST(request) {
     console.log('Received POST request to /api/tools/saveMail');
 
     // Get request body
-    const { user_id, subject, body, recipient_email, closing, prompt } = await request.json();
-    console.log('Request body:', { user_id, subject, body, recipient_email, closing, prompt });
+    const { user_id, subject, body, greetings, closing, prompt } = await request.json();
+    console.log('Request body:', { user_id, subject, body, greetings, closing, prompt });
 
     // Validate inputs
     if (!user_id || !subject || !body || !closing || !prompt) {
@@ -47,9 +47,9 @@ export async function POST(request) {
           user_id,
           subject,
           body,
-          recipient_email,
           closing,
           prompt,
+          greetings,
         },
       ])
       .select();

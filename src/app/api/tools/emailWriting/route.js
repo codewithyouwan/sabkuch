@@ -37,7 +37,7 @@ export async function POST(request) {
 
     // Construct prompt
     const prompt = getEmailPrompt(context, tone, length);
-    console.log('Sending prompt to LLaMA 4 model:', prompt);
+    console.log('Sending prompt to GPT-4.1 model:', prompt);
 
     // Call LLaMA 4 model
     const response = await client.path("/chat/completions").post({

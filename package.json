@@ -1,4 +1,5 @@
 {
+  "type":"module",
   "name": "sabkuch",
   "version": "0.1.0",
   "private": true,
@@ -14,11 +15,14 @@
     "@supabase/supabase-js": "^2.49.4",
     "axios": "^1.10.0",
     "bcrypt": "^6.0.0",
+    "dotenv": "^16.5.0",
     "jsonwebtoken": "^9.0.2",
-    "next": "15.3.3",
+    "next": "15.3.4",
     "pnpm": "^10.11.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.5.2",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
