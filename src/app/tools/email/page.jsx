@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import Loader from '../../components/loader';
 import CustomToaster from '../../components/toast';
 
-export default function HomePage() {
+export default function WritingTools() {
+  const [context, setContext] = useState('');
   const [user, setUser] = useState(null);
   const [tone, setTone] = useState('professional');
   const [length, setLength] = useState('');
@@ -58,7 +58,16 @@ export default function HomePage() {
     verifyToken();
   }, [router]);
 
-  // Handle clicks outside dropdown to close it
+  // Auto-resize context textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [context]);
+
+  // Auto-resize email textareas when editing
   useEffect(() => {
     if (isEditing) {
       const textareas = document.querySelectorAll('.email-textarea');
@@ -369,37 +378,28 @@ export default function HomePage() {
               />
             </div>
             <button
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-2 text-black hover:bg-gray-100 rounded-lg"
+              type="submit"
+              disabled={loading}
+              className={`w-full py-2 px-4 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              Logout
+              {loading ? 'Generating...' : 'Generate'}
             </button>
           </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="flex-grow p-6">
-        <h2 className="text-3xl font-bold text-center text-black mb-8">Welcome, {user.name}!</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {tools.map((tool) => (
-            <Link
-              key={tool.id}
-              href={tool.path}
-              className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow flex flex-col items-center text-center"
-            >
-              <span className="text-4xl mb-4">{tool.icon}</span>
-              <h3 className="text-xl font-semibold text-black mb-2">{tool.name}</h3>
-              <p className="text-gray-600">{tool.description}</p>
-            </Link>
-          ))}
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-white p-4 text-center text-black shadow-inner">
-        <p>© 2025 SabKuch. All rights reserved.</p>
-      </footer>
+        </form>
+      </div>
+      <style jsx>{`
+        .scrollbar-hidden {
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* IE and Edge */
+        }
+        .scrollbar-hidden::-webkit-scrollbar {
+          display: none; /* Chrome, Safari, Edge */
+        }
+        .email-textarea {
+          min-height: 40px;
+          box-sizing: border-box;
+        }
+      `}</style>
     </div>
   );
 }

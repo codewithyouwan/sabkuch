@@ -78,6 +78,13 @@ export default function HomePage() {
       path: '/tools/email',
       icon: '📧',
     },
+    {
+      id: 'password-manager',
+      name: 'Password Manager',
+      description: 'Securely generate and store passwords with client-side encryption.',
+      path: '/tools/password',
+      icon: '🔒',
+    },
   ];
 
   if (loading) {
