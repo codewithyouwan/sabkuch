@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -92,7 +93,6 @@ export default function PasswordManager() {
       setStrength({ score: 0, label: 'None' });
     }
   }, [length, useUppercase, useLowercase, useNumbers, useSymbols]);
-
   const handleGenerate = () => {
     if (!useUppercase && !useLowercase && !useNumbers && !useSymbols) {
       setError('Select at least one character type.');
