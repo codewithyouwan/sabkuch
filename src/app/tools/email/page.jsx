@@ -1,19 +1,17 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-export default function WritingTools() {
-  const [context, setContext] = useState('');
+export default function HomePage() {
   const [user, setUser] = useState(null);
-  const [tone, setTone] = useState('professional');
-  const [length, setLength] = useState('');
-  const [generatedEmail, setGeneratedEmail] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const textareaRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const router = useRouter();
+
+  // Verify token and fetch user data
   useEffect(() => {
     const verifyToken = async () => {
       const token = localStorage.getItem('authToken');
@@ -53,369 +51,104 @@ export default function WritingTools() {
     verifyToken();
   }, [router]);
 
-  // Auto-resize context textarea
+  // Handle clicks outside dropdown to close it
   useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    }
-  }, [context]);
-
-  // Auto-resize email textareas when editing
-  useEffect(() => {
-    if (isEditing) {
-      const textareas = document.querySelectorAll('.email-textarea');
-      textareas.forEach((ta) => {
-        ta.style.height = 'auto';
-        ta.style.height = `${ta.scrollHeight}px`;
-      });
-    }
-  }, [isEditing, generatedEmail]);
-
-  // Verify JWT token
-  useEffect(() => {
-    const verifyToken = async () => {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/auth/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
-        });
-        if (!response.ok) {
-          localStorage.removeItem('authToken');
-          router.push('/login');
-        }
-      } catch (err) {
-        console.error('Verification error:', err);
-        localStorage.removeItem('authToken');
-        router.push('/login');
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
       }
     };
-    verifyToken();
-  }, [router]);
 
-  const handleGenerateEmail = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    setIsEditing(false); // Reset to static view
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-    if (context.trim().length === 0) {
-      setError('Please enter the email context');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      console.log('Sending API request with:', { context, tone, length });
-      const response = await fetch('/api/tools/emailWriting', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ context, tone, length }),
-      });
-
-      const data = await response.json();
-      console.log('API response:', data);
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate email');
-      }
-
-      setGeneratedEmail({ ...data.email, prompt: context });
-    } catch (err) {
-      setError(err.message);
-      console.error('API error:', err);
-    } finally {
-      setLoading(false);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    setIsDropdownOpen(false);
+    router.push('/login');
   };
 
-  const handleEmailChange = (field, value) => {
-    setGeneratedEmail((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  // Tool data
+  const tools = [
+    {
+      id: 'email-writer',
+      name: 'Email Writer',
+      description: `Generate professional emails with customizable tone and length. Powered by GPT-4.1`,
+      path: '/tools/email',
+      icon: '📧',
+    },
+    {
+      id: 'password-manager',
+      name: 'Password Manager',
+      description: 'Securely generate and store passwords with client-side encryption.',
+      path: '/password-manager',
+      icon: '🔒',
+    },
+  ];
 
-  const handleSendViaEmail = () => {
-    console.log('Send via Email button clicked');
-    if (!generatedEmail) {
-      console.log('No generated email available');
-      setError('No email generated');
-      return;
-    }
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-black">Loading...</p>
+      </div>
+    );
+  }
 
-    try {
-      console.log('Preparing mailto link');
-      const emailBody = `${generatedEmail.greeting}\n\n${generatedEmail.body}\n\n${generatedEmail.closing}`;
-      const encodedSubject = encodeURIComponent(generatedEmail.subject);
-      const encodedBody = encodeURIComponent(emailBody);
-      const mailtoLink = `mailto:?subject=${encodedSubject}&body=${encodedBody}`;
-      console.log('Mailto link:', mailtoLink);
-
-      const link = document.createElement('a');
-      link.href = mailtoLink;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      console.log('Triggering mailto link');
-      link.click();
-      document.body.removeChild(link);
-      console.log('Mailto link triggered');
-    } catch (err) {
-      setError('Failed to open mail app. Use Copy to Clipboard as a fallback.');
-      console.error('Mailto error:', err);
-    }
-  };
-
-  const handleCopyToClipboard = () => {
-    console.log('Copy to Clipboard button clicked');
-    if (!generatedEmail) {
-      console.log('No generated email available');
-      setError('No email generated');
-      return;
-    }
-
-    try {
-      const emailText = `Subject: ${generatedEmail.subject}\n\n${generatedEmail.greeting}\n\n${generatedEmail.body}\n\n${generatedEmail.closing}`;
-      navigator.clipboard.writeText(emailText)
-        .then(() => {
-          setError('Email copied to clipboard! Paste it into your mail app.');
-          console.log('Email copied to clipboard');
-        })
-        .catch((err) => {
-          setError('Failed to copy email. Please select and copy the text manually.');
-          console.error('Clipboard error:', err);
-        });
-    } catch (err) {
-      setError('Failed to copy email. Please select and copy the text manually.');
-      console.error('Clipboard error:', err);
-    }
-  };
-
-  const handleSaveEmail = async (retries = 3) => {
-    console.log('Save Email button clicked');
-    if (!generatedEmail) {
-      console.log('No generated email available');
-      setError('No email generated');
-      return;
-    }
-
-    try {
-      const user_id = '00000000-0000-0000-0000-000000000001'; // TODO: Get from JWT
-      console.log('Saving email with:', { ...generatedEmail, user_id });
-      const response = await fetch('/api/tools/saveMail', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id,
-          subject: generatedEmail.subject,
-          body: generatedEmail.body,
-          recipient_email: null,
-          closing: generatedEmail.closing,
-          prompt: generatedEmail.prompt,
-        }),
-      });
-
-      const data = await response.json();
-      console.log('Save email response:', data);
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to save email');
-      }
-
-      setError('Email saved successfully!');
-    } catch (err) {
-      if (retries > 1 && err.message.includes('fetch failed')) {
-        console.log('Retrying save email, retries left:', retries - 1);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        return handleSaveEmail(retries - 1);
-      }
-      setError(err.message);
-      console.error('Save email error:', err);
-    }
-  };
+  if (!user) {
+    return null; // Redirecting to login
+  }
 
   return (
-    <div className="min-h-screen flex flex-col p-4 bg-gray-100 pb-48"> {/* Added pb-48 to avoid form overlap */}
-      <h1 className="text-2xl font-bold mb-6 text-center text-black">Email Writing Tool</h1>
-      <div className="flex-grow flex flex-col w-full max-w-3xl mx-auto">
-        {generatedEmail && (
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6 relative">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-black">Generated Email</h2>
-              {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="py-1 px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                >
-                  Edit
-                </button>
-              )}
-            </div>
-            {isEditing ? (
-              <div className="space-y-4 text-black">
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Subject:</label>
-                  <input
-                    type="text"
-                    value={generatedEmail.subject}
-                    onChange={(e) => handleEmailChange('subject', e.target.value)}
-                    className="w-full p-2 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Greeting:</label>
-                  <textarea
-                    value={generatedEmail.greeting}
-                    onChange={(e) => handleEmailChange('greeting', e.target.value)}
-                    className="w-full p-2 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none email-textarea"
-                    rows={2}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Body:</label>
-                  <textarea
-                    value={generatedEmail.body}
-                    onChange={(e) => handleEmailChange('body', e.target.value)}
-                    className="w-full p-2 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none email-textarea"
-                    rows={6}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Closing:</label>
-                  <textarea
-                    value={generatedEmail.closing}
-                    onChange={(e) => handleEmailChange('closing', e.target.value)}
-                    className="w-full p-2 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none email-textarea"
-                    rows={3}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2 text-black">
-                <p><strong>Subject:</strong> {generatedEmail.subject}</p>
-                <p><strong>Greeting:</strong> {generatedEmail.greeting}</p>
-                <p>
-                  <strong>Body:</strong>
-                  <br />
-                  {generatedEmail.body.split('\n').map((line, i) => (
-                    <span key={i}>
-                      {line}
-                      <br />
-                    </span>
-                  ))}
-                </p>
-                <p>
-                  <strong>Closing:</strong>
-                  <br />
-                  {generatedEmail.closing.split('\n').map((line, i) => (
-                    <span key={i}>
-                      {line}
-                      <br />
-                    </span>
-                  ))}
-                </p>
-              </div>
-            )}
-            <div className="flex flex-col space-y-2 mt-6">
-              <button
-                onClick={handleSendViaEmail}
-                className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Send via Email
-              </button>
-              <button
-                onClick={handleCopyToClipboard}
-                className="w-full py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Copy to Clipboard
-              </button>
-              <button
-                onClick={handleSaveEmail}
-                className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Save Email
-              </button>
-            </div>
-          </div>
-        )}
-        {error && (
-          <p className="text-red-500 text-sm text-center mb-4">{error}</p>
-        )}
-        <form onSubmit={handleGenerateEmail} className="fixed bottom-4 left-0 right-0 flex justify-center">
-          <div className="w-full max-w-3xl bg-white/20 backdrop-blur-sm p-4 rounded-lg shadow-lg flex flex-col space-y-4">
-            <textarea
-              ref={textareaRef}
-              value={context}
-              onChange={(e) => {
-                setContext(e.target.value);
-                const textarea = textareaRef.current;
-                textarea.style.height = 'auto';
-                textarea.style.height = `${textarea.scrollHeight}px`;
-              }}
-              placeholder="e.g., Write a professional email to my manager requesting leave"
-              className="w-full p-4 text-black bg-blue-50/70 border border-gray-200/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-base leading-relaxed scrollbar-hidden"
-              disabled={loading}
-              rows={1}
-              style={{ minHeight: '40px', maxHeight: '12rem', boxSizing: 'border-box' }}
-            />
-            <div className="flex items-center space-x-2">
-              <label htmlFor="tone" className="text-sm font-medium text-black">
-                Tone:
-              </label>
-              <select
-                id="tone"
-                value={tone}
-                onChange={(e) => setTone(e.target.value)}
-                className="p-2 text-black border border-gray-200/60 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/70"
-                disabled={loading}
-              >
-                <option value="professional">Professional</option>
-                <option value="friendly">Friendly</option>
-                <option value="business">Business</option>
-                <option value="others">Others</option>
-              </select>
-              <label htmlFor="length" className="text-sm font-medium text-black">
-                Length:
-              </label>
-              <input
-                id="length"
-                type="number"
-                value={length}
-                onChange={(e) => setLength(e.target.value)}
-                placeholder="e.g., 200"
-                className="p-2 text-black border border-gray-200/60 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-24 bg-blue/70"
-                disabled={loading}
-              />
-            </div>
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      {/* Navigation Bar */}
+      <nav className="bg-white shadow-md p-4 flex justify-between items-center">
+        <h1 className="text-black text-2xl font-semibold">SabKuch</h1>
+        <div className="relative" ref={dropdownRef}>
+          <button
+            className="text-blue-600 focus:outline-none"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            aria-label="User menu"
+          >
+            <span className="text-2xl">👤</span>
+          </button>
+          <div
+            className={`absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10 ${
+              isDropdownOpen ? 'block' : 'hidden'
+            }`}
+          >
             <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-2 px-4 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={handleLogout}
+              className="w-full text-left px-4 py-2 text-black hover:bg-gray-100 rounded-lg"
             >
-              {loading ? 'Generating...' : 'Generate'}
+              Logout
             </button>
           </div>
-        </form>
-      </div>
-      <style jsx>{`
-        .scrollbar-hidden {
-          scrollbar-width: none; /* Firefox */
-          -ms-overflow-style: none; /* IE and Edge */
-        }
-        .scrollbar-hidden::-webkit-scrollbar {
-          display: none; /* Chrome, Safari, Edge */
-        }
-        .email-textarea {
-          min-height: 40px;
-          box-sizing: border-box;
-        }
-      `}</style>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="flex-grow p-6">
+        <h2 className="text-3xl font-bold text-center text-black mb-8">Welcome, {user.name}!</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {tools.map((tool) => (
+            <Link
+              key={tool.id}
+              href={tool.path}
+              className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow flex flex-col items-center text-center"
+            >
+              <span className="text-4xl mb-4">{tool.icon}</span>
+              <h3 className="text-xl font-semibold text-black mb-2">{tool.name}</h3>
+              <p className="text-gray-600">{tool.description}</p>
+            </Link>
+          ))}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-white p-4 text-center text-black shadow-inner">
+        <p>© 2025 SabKuch. All rights reserved.</p>
+      </footer>
     </div>
   );
 }
