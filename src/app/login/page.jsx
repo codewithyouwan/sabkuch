@@ -47,36 +47,36 @@ export default function LoginPage() {
       bgColor: "bg-purple-500/20",
       features: ["AES-GCM encryption", "Secure vault", "Auto-generation"]
     },
-    {
-      name: "Smart Assistant",
-      description: "AI-powered productivity companion",
-      icon: (
-        <div className="relative">
-          <Bot className="w-8 h-8" />
-          <div className="absolute -top-1 -left-1 w-3 h-3 bg-yellow-400 rounded-full flex items-center justify-center">
-            <Zap className="w-2 h-2 text-white" />
-          </div>
-        </div>
-      ),
-      color: "from-green-500 to-emerald-500",
-      bgColor: "bg-green-500/20",
-      features: ["Task automation", "Smart suggestions", "Context aware"]
-    },
-    {
-      name: "Document Tools",
-      description: "Advanced document processing",
-      icon: (
-        <div className="relative">
-          <FileText className="w-8 h-8" />
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-400 rounded-full flex items-center justify-center">
-            <Grid3x3 className="w-2 h-2 text-white" />
-          </div>
-        </div>
-      ),
-      color: "from-orange-500 to-red-500",
-      bgColor: "bg-orange-500/20",
-      features: ["Format conversion", "Text analysis", "Auto-summary"]
-    }
+    // {
+    //   name: "Smart Assistant",
+    //   description: "AI-powered productivity companion",
+    //   icon: (
+    //     <div className="relative">
+    //       <Bot className="w-8 h-8" />
+    //       <div className="absolute -top-1 -left-1 w-3 h-3 bg-yellow-400 rounded-full flex items-center justify-center">
+    //         <Zap className="w-2 h-2 text-white" />
+    //       </div>
+    //     </div>
+    //   ),
+    //   color: "from-green-500 to-emerald-500",
+    //   bgColor: "bg-green-500/20",
+    //   features: ["Task automation", "Smart suggestions", "Context aware"]
+    // },
+    // {
+    //   name: "Document Tools",
+    //   description: "Advanced document processing",
+    //   icon: (
+    //     <div className="relative">
+    //       <FileText className="w-8 h-8" />
+    //       <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-400 rounded-full flex items-center justify-center">
+    //         <Grid3x3 className="w-2 h-2 text-white" />
+    //       </div>
+    //     </div>
+    //   ),
+    //   color: "from-orange-500 to-red-500",
+    //   bgColor: "bg-orange-500/20",
+    //   features: ["Format conversion", "Text analysis", "Auto-summary"]
+    // }
   ];
 
   useEffect(() => {
@@ -257,9 +257,9 @@ export default function LoginPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-6">
+          {/* <div className="grid grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-white mb-1">4+</div>
+              <div className="text-3xl font-bold text-white mb-1">2</div>
               <div className="text-sm text-gray-400">Productivity Tools</div>
             </div>
             <div className="text-center">
@@ -270,7 +270,7 @@ export default function LoginPage() {
               <div className="text-3xl font-bold text-white mb-1">AI</div>
               <div className="text-sm text-gray-400">Powered</div>
             </div>
-          </div>
+          </div>*/}
         </div>
 
         {/* Right side - Login form */}
