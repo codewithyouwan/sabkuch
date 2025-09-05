@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
+import { ArrowLeft, Mail, Sparkles, Copy, Save, Send, Layers } from 'lucide-react';
 import Loader from '../../components/loader';
 import CustomToaster from '../../components/toast';
 
@@ -81,7 +82,7 @@ export default function WritingTools() {
   const handleGenerateEmail = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setIsEditing(false); // Reset to static view
+    setIsEditing(false);
 
     if (context.trim().length === 0) {
       toast.error('Please enter the email context');
@@ -219,72 +220,93 @@ export default function WritingTools() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col p-4 bg-gray-100 pb-48">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col p-4 pb-48">
       <CustomToaster />
       {loading && <Loader />}
-      <button
-        onClick={() => router.push('/home')}
-        className="absolute top-4 left-4 text-gray-600 hover:text-gray-800 transition-colors focus:outline-none"
-        aria-label="Go back to homepage"
-      >
-        <span className="text-2xl">←</span>
-      </button>
-      <h1 className="text-2xl font-bold mb-6 text-center text-black">Email Writing Tool</h1>
-      <div className="flex-grow flex flex-col w-full max-w-3xl mx-auto">
+      {/* Background decorations */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-20 left-20 w-32 h-32 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-40 h-40 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute top-40 right-40 w-24 h-24 bg-green-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute bottom-40 left-40 w-36 h-36 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+      </div>
+
+      {/* Header */}
+      <div className="relative z-10 flex items-center justify-between mb-8">
+        <button
+          onClick={() => router.push('/home')}
+          className="text-gray-300 hover:text-blue-300 transition-colors focus:outline-none"
+          aria-label="Go back to homepage"
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <Layers className="w-5 h-5 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+            Email Writing Tool
+          </h1>
+        </div>
+        <div className="w-6 h-6" /> {/* Placeholder for symmetry */}
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 flex-grow flex flex-col w-full max-w-3xl mx-auto">
         {generatedEmail && (
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6 relative">
+          <div className="bg-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-2xl border border-white/20 mb-6 relative">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-black">Generated Email</h2>
+              <h2 className="text-xl font-bold text-white">Generated Email</h2>
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="py-1 px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  className="py-1 px-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors text-sm"
                 >
                   Edit
                 </button>
               )}
             </div>
             {isEditing ? (
-              <div className="space-y-4 text-black">
+              <div className="space-y-4 text-white">
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">Subject:</label>
+                  <label className="block text-sm font-medium text-gray-200 mb-1">Subject:</label>
                   <input
                     type="text"
                     value={generatedEmail.subject}
                     onChange={(e) => handleEmailChange('subject', e.target.value)}
-                    className="w-full p-2 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 text-white bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">Greeting:</label>
+                  <label className="block text-sm font-medium text-gray-200 mb-1">Greeting:</label>
                   <textarea
                     value={generatedEmail.greeting}
                     onChange={(e) => handleEmailChange('greeting', e.target.value)}
-                    className="w-full p-2 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none email-textarea"
+                    className="w-full p-2 text-white bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none email-textarea transition-all duration-200"
                     rows={2}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">Body:</label>
+                  <label className="block text-sm font-medium text-gray-200 mb-1">Body:</label>
                   <textarea
                     value={generatedEmail.body}
                     onChange={(e) => handleEmailChange('body', e.target.value)}
-                    className="w-full p-2 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none email-textarea"
+                    className="w-full p-2 text-white bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none email-textarea transition-all duration-200"
                     rows={6}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">Closing:</label>
+                  <label className="block text-sm font-medium text-gray-200 mb-1">Closing:</label>
                   <textarea
                     value={generatedEmail.closing}
                     onChange={(e) => handleEmailChange('closing', e.target.value)}
-                    className="w-full p-2 text-black bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none email-textarea"
+                    className="w-full p-2 text-white bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none email-textarea transition-all duration-200"
                     rows={3}
                   />
                 </div>
               </div>
             ) : (
-              <div className="space-y-2 text-black">
+              <div className="space-y-2 text-gray-200">
                 <p><strong>Subject:</strong> {generatedEmail.subject}</p>
                 <p><strong>Greeting:</strong> {generatedEmail.greeting}</p>
                 <p>
@@ -312,77 +334,97 @@ export default function WritingTools() {
             <div className="flex flex-col space-y-2 mt-6">
               <button
                 onClick={handleSendViaEmail}
-                className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="w-full py-2 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
               >
-                Send via Email
+                <Send className="w-4 h-4" />
+                <span>Send via Email</span>
               </button>
               <button
                 onClick={handleCopyToClipboard}
-                className="w-full py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                className="w-full py-2 px-4 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
               >
-                Copy to Clipboard
+                <Copy className="w-4 h-4" />
+                <span>Copy to Clipboard</span>
               </button>
               <button
                 onClick={handleSaveEmail}
-                className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="w-full py-2 px-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
               >
-                Save Email
+                <Save className="w-4 h-4" />
+                <span>Save Email</span>
               </button>
             </div>
           </div>
         )}
         <form onSubmit={handleGenerateEmail} className="fixed bottom-4 left-0 right-0 flex justify-center">
-          <div className="w-full max-w-3xl bg-white/20 backdrop-blur-sm p-4 rounded-lg shadow-lg flex flex-col space-y-4">
-            <textarea
-              ref={textareaRef}
-              value={context}
-              onChange={(e) => {
-                setContext(e.target.value);
-                const textarea = textareaRef.current;
-                textarea.style.height = 'auto';
-                textarea.style.height = `${textarea.scrollHeight}px`;
-              }}
-              placeholder="e.g., Write a professional email to my manager requesting leave"
-              className="w-full p-4 text-black bg-blue-50/70 border border-gray-200/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-base leading-relaxed scrollbar-hidden"
-              disabled={loading}
-              rows={1}
-              style={{ minHeight: '40px', maxHeight: '12rem', boxSizing: 'border-box' }}
-            />
-            <div className="flex items-center space-x-2">
-              <label htmlFor="tone" className="text-sm font-medium text-black">
-                Tone:
-              </label>
-              <select
-                id="tone"
-                value={tone}
-                onChange={(e) => setTone(e.target.value)}
-                className="p-2 text-black border border-gray-200/60 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/70"
+          <div className="w-full max-w-3xl bg-white/10 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-white/20 flex flex-col space-y-4">
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <textarea
+                ref={textareaRef}
+                value={context}
+                onChange={(e) => {
+                  setContext(e.target.value);
+                  const textarea = textareaRef.current;
+                  textarea.style.height = 'auto';
+                  textarea.style.height = `${textarea.scrollHeight}px`;
+                }}
+                placeholder="e.g., Write a professional email to my manager requesting leave"
+                className="w-full pl-11 pr-4 py-3 text-white bg-white/10 border border-white/20 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none text-base leading-relaxed scrollbar-hidden"
                 disabled={loading}
-              >
-                <option value="professional">Professional</option>
-                <option value="friendly">Friendly</option>
-                <option value="business">Business</option>
-                <option value="others">Others</option>
-              </select>
-              <label htmlFor="length" className="text-sm font-medium text-black">
-                Length:
-              </label>
-              <input
-                id="length"
-                type="number"
-                value={length}
-                onChange={(e) => setLength(e.target.value)}
-                placeholder="e.g., 200"
-                className="p-2 text-black border border-gray-200/60 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-24 bg-blue/70"
-                disabled={loading}
+                rows={1}
+                style={{ minHeight: '40px', maxHeight: '12rem', boxSizing: 'border-box' }}
               />
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <label htmlFor="tone" className="text-sm font-medium text-gray-200">
+                  Tone:
+                </label>
+                <select
+                  id="tone"
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value)}
+                  className="p-2 text-white bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  disabled={loading}
+                >
+                  <option value="professional">Professional</option>
+                  <option value="friendly">Friendly</option>
+                  <option value="business">Business</option>
+                  <option value="others">Others</option>
+                </select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <label htmlFor="length" className="text-sm font-medium text-gray-200">
+                  Length:
+                </label>
+                <input
+                  id="length"
+                  type="number"
+                  value={length}
+                  onChange={(e) => setLength(e.target.value)}
+                  placeholder="e.g., 200"
+                  className="p-2 text-white bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 w-24"
+                  disabled={loading}
+                />
+              </div>
             </div>
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-2 px-4 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-full py-2 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-200 transform hover:scale-105 ${loading ? 'opacity-50 cursor-not-allowed scale-100' : ''}`}
             >
-              {loading ? 'Generating...' : 'Generate'}
+              {loading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Generating...</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center space-x-2">
+                  <span>Generate Email</span>
+                  <Sparkles className="w-4 h-4" />
+                </div>
+              )}
             </button>
           </div>
         </form>
